@@ -1,0 +1,40 @@
+pipeline {
+    agent {
+        label 'temp-docker-agent-alpine'
+    } 
+    
+    environment {
+        IMAGE_NAME = "learninlabs-flask:latest"
+        CONTAINER_NAME = "learninlabs-flask"
+        PORT = "8081:8080"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/Henseyx/LearninLabs.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('FlaskApp_Tutorial') {
+                    sh 'docker build -t ${IMAGE_NAME} .'
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    sh '''
+                    if [ "$(docker ps -q -f name=${CONTAINER_NAME})" ]; then
+                        docker stop ${CONTAINER_NAME}
+                    fi
+                    '''
+                    sh 'docker run -d --rm --name ${CONTAINER_NAME} -p ${PORT} ${IMAGE_NAME}'
+                }
+            }
+        }
+    }
+}
